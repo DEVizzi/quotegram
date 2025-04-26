@@ -1,0 +1,27 @@
+name: Hourly Instagram Post
+
+on:
+  schedule:
+    - cron: '0 * * * *'     # every hour at minute 0 :contentReference[oaicite:7]{index=7}
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install deps
+        run: pip install google-genai pillow instagrapi
+
+      - name: Run script
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}  
+          IG_USERNAME:     ${{ secrets.IG_USERNAME }}
+          IG_PASSWORD:     ${{ secrets.IG_PASSWORD }}
+        run: python post_instagram.py
