@@ -2,26 +2,42 @@ name: Hourly Instagram Post
 
 on:
   schedule:
-    - cron: '0 * * * *'     # every hour at minute 0 :contentReference[oaicite:7]{index=7}
+    # Run at minute 0 of every hour (UTC)
+    - cron: '0 * * * *'
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   post:
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      IG_USERNAME:      ${{ secrets.IG_USERNAME }}
+      IG_PASSWORD:      ${{ secrets.IG_PASSWORD }}
+      # optional: override session/history filenames
+      # INSTAGRAM_SESSION_FILE: "ig_session.pkl"
+      # QUOTE_HISTORY_FILE:     "quote_history.txt"
 
     steps:
-      - uses: actions/checkout@v3
+      - name: 🔍 Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: "3.10"
 
-      - name: Install deps
-        run: pip install google-genai pillow instagrapi
+      - name: 📦 Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg libgl1 libsm6 libxrender1 libxext6
 
-      - name: Run script
-        env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}  
-          IG_USERNAME:     ${{ secrets.IG_USERNAME }}
-          IG_PASSWORD:     ${{ secrets.IG_PASSWORD }}
-        run: python post_instagram.py
+      - name: 📥 Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 👟 Run Instagram posting script
+        run: |
+          python post_instagram.py

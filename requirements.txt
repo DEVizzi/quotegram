@@ -1,0 +1,8 @@
+# requirements.txt
+opencv-python
+numpy
+Pillow
+instagrapi
+python-dotenv
+langchain
+langchain-google-genai
