@@ -302,7 +302,7 @@ def overlay_text_in_box(image_path, text):
     x, y, w, h = detect_adjusted_bbox(image_path)
     
     # Draw red border around maximum available area
-    draw.rectangle([x, y, x + w, y + h], outline="red", width=3)
+    # draw.rectangle([x, y, x + w, y + h], outline="red", width=3)
     
     # Apply padding inside the red border
     pad = int(min(w, h) * PADDING_RATIO)
@@ -414,13 +414,13 @@ if __name__ == "__main__":
             #Image.open(post_img).save(final_path)
             #print(f"✅ Image saved to {final_path}")
 
-            video_path = combine_image_with_music_ffmpeg(post_img)
-            final_video_path = os.path.join(output_folder, f"quote_{timestamp}.mp4")
-            os.rename(video_path, final_video_path)
-            print(f"✅ Video saved to {final_video_path}")
+            #video_path = combine_image_with_music_ffmpeg(post_img)
+            #final_video_path = os.path.join(output_folder, f"quote_{timestamp}.mp4")
+            #os.rename(video_path, final_video_path)
+            #print(f"✅ Video saved to {final_video_path}")
             
             # Instagram posting disabled
-            # print(post_to_instagram.invoke({"image_path": post_img, "caption": quote}))
+            print(post_to_instagram.invoke({"image_path": post_img, "caption": quote}))
                      
             success = True
         except RuntimeError as e:
