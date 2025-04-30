@@ -1,6 +1,7 @@
 import os
 import random
 import textwrap
+import tempfile
 import requests
 import subprocess
 import pickle
@@ -16,7 +17,7 @@ from typing import Optional, List
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-
+from google.auth.transport.requests import Request
 # LangChain imports
 from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -27,8 +28,8 @@ load_dotenv()
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 # OAuth scope for uploading to YouTube
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
-CLIENT_SECRETS_CONTENT = os.getenv("YOUTUBE_CLIENT_SECRETS_JSON")
 TOKEN_FILE = os.getenv("YOUTUBE_TOKEN_FILE", "token_youtube.pickle")
+CLIENT_SECRETS_CONTENT = os.getenv("YOUTUBE_CLIENT_SECRETS_JSON")
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 
 # Instagram Graph API configuration
@@ -88,26 +89,24 @@ PADDING_RATIO = 0.25  # 25% padding
 def authenticate_youtube():
     """Authenticate the user via OAuth and return a YouTube service client."""
     creds = None
+
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, "rb") as token:
             creds = pickle.load(token)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            import json
-            import tempfile
+            if not os.path.exists(CLIENT_SECRETS_FILE):
+                raise FileNotFoundError(f"Client secrets file not found: {CLIENT_SECRETS_FILE}")
 
-        if not CLIENT_SECRETS_CONTENT:
-            raise EnvironmentError("YOUTUBE_CLIENT_SECRETS_JSON environment variable is not set.")
-
-        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as tmp_file:
-            tmp_file.write(CLIENT_SECRETS_CONTENT)
-            tmp_file.flush()
-            flow = InstalledAppFlow.from_client_secrets_file(tmp_file.name, SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
             creds = flow.run_console()
+
         with open(TOKEN_FILE, "wb") as token:
             pickle.dump(creds, token)
+
     return build("youtube", "v3", credentials=creds)
 
 
@@ -268,12 +267,17 @@ def generate_quote() -> str:
     all_styles = [q for cat in styles.values() for q in cat]
     for _ in range(3):
         prompt = random.choice(all_styles)
+        def remove_emojis(text):
+            return re.sub(r'[\U00010000-\U0010ffff\u200d\u2640-\u2642]', '', text)
+
         msgs = [
-            SystemMessage(content="You are a cheerful assistant. Strictly show only quotes."),
-            HumanMessage(content=prompt + " Never repeat quotes."),
+            SystemMessage(content="You are a cheerful assistant. Strictly show only plain-text quotes. Do not use any emojis, emoticons, or symbols."),
+            HumanMessage(content=prompt + " Never repeat quotes. Do NOT use any emojis."),
         ]
         try:
             resp = llm.invoke(msgs).content.strip()
+            resp = remove_emojis(resp)
+
         except Exception:
             continue
         if not resp:
@@ -453,28 +457,18 @@ def overlay_text_in_box(image_path, text):
         best_font = ImageFont.truetype(HANDWRITING_FONT_PATH, min_fs)
         best_lines = textwrap.wrap(text, width=40)
     
-    emoji_font = get_emoji_font(best_font.size)
-    
-    def is_emoji(ch):
-        import unicodedata
-        return unicodedata.category(ch) in ('So','Sk') or 'EMOJI' in unicodedata.name(ch,'')
     
     # Center text vertically and horizontally
     cy = text_y + (text_height - sum(draw.textbbox((0,0), l, font=best_font)[3] - draw.textbbox((0,0), l, font=best_font)[1] for l in best_lines) - spacing*(len(best_lines)-1)) // 2
     for line in best_lines:
-        line_width = sum(
-            (draw.textbbox((0,0), ch, font=emoji_font if is_emoji(ch) else best_font)[2] 
-             - draw.textbbox((0,0), ch, font=emoji_font if is_emoji(ch) else best_font)[0])
-            for ch in line
-        )
+        line_width = sum(draw.textbbox((0, 0), ch, font=best_font)[2] - draw.textbbox((0, 0), ch, font=best_font)[0] for ch in line)
         cx = text_x + (text_width - line_width) // 2
         for ch in line:
-            fnt = emoji_font if is_emoji(ch) else best_font
-            draw.text((cx, cy), ch, fill=pen_color, font=fnt)
-            bb = draw.textbbox((0,0), ch, font=fnt)
+            draw.text((cx, cy), ch, fill=pen_color, font=best_font)
+            bb = draw.textbbox((0, 0), ch, font=best_font)
             cx += bb[2] - bb[0]
-        cy += (draw.textbbox((0,0), line, font=best_font)[3] - draw.textbbox((0,0), line, font=best_font)[1] + spacing)
-    
+        cy += (draw.textbbox((0, 0), line, font=best_font)[3] - draw.textbbox((0, 0), line, font=best_font)[1] + spacing)
+
     out = "temp_post.jpg"
     pil_img.save(out)
     return out
