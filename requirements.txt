@@ -1,9 +1,12 @@
-opencv-python
+instagrapi
+requests
+opencv-python-headless
 numpy
 Pillow
-instagrapi
 python-dotenv
 langchain
 langchain-google-genai
+google-auth
+google-auth-httplib2
 google-auth-oauthlib
 google-api-python-client
