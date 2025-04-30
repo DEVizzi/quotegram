@@ -105,7 +105,7 @@ def authenticate_youtube():
             tmp_file.write(CLIENT_SECRETS_CONTENT)
             tmp_file.flush()
             flow = InstalledAppFlow.from_client_secrets_file(tmp_file.name, SCOPES)
-            creds = flow.run_local_server(port=8080, prompt="consent")
+            creds = flow.run_console()
         with open(TOKEN_FILE, "wb") as token:
             pickle.dump(creds, token)
     return build("youtube", "v3", credentials=creds)
