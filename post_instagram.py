@@ -1,4 +1,5 @@
 import os
+import tempfile
 import random
 import textwrap
 import tempfile
@@ -89,24 +90,25 @@ PADDING_RATIO = 0.25  # 25% padding
 def authenticate_youtube():
     """Authenticate the user via OAuth and return a YouTube service client."""
     creds = None
-
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, "rb") as token:
             creds = pickle.load(token)
-
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            if not os.path.exists(CLIENT_SECRETS_FILE):
-                raise FileNotFoundError(f"Client secrets file not found: {CLIENT_SECRETS_FILE}")
+            import json
 
-            flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
-            creds = flow.run_console()
+        if not CLIENT_SECRETS_CONTENT:
+            raise EnvironmentError("YOUTUBE_CLIENT_SECRETS_JSON environment variable is not set.")
 
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.json') as tmp_file:
+            tmp_file.write(CLIENT_SECRETS_CONTENT)
+            tmp_file.flush()
+            flow = InstalledAppFlow.from_client_secrets_file(tmp_file.name, SCOPES)
+            creds = flow.run_local_server(port=8080, prompt="consent")
         with open(TOKEN_FILE, "wb") as token:
             pickle.dump(creds, token)
-
     return build("youtube", "v3", credentials=creds)
 
 
