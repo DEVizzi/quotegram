@@ -54,17 +54,20 @@ IMG_DIR = "images"
 MUSIC_DIR = "music"  # Folder containing royalty-free happy music files (e.g., .mp3)
 EMOJI_FONT_PATH = "fonts/NotoEmoji-Regular.ttf"
 WINDOWS_EMOJI_FONT = r"C:\\Windows\\Fonts\\seguiemj.ttf"
-HANDWRITING_FONT_PATH = "fonts/DancingScript-Regular.ttf"
+HANDWRITING_FONT_PATH = "fonts/Pacifico-Regular.ttf"
 
 # Pen color palette
 PEN_COLORS = [
     # Original Pen Colors
-    "#000000", "#000066", "#3a0066", "#660000", "#404040", "#cc0f70",
+    "#000000",  # Black
+    "#000066",  # Deep Navy
+    "#3A0066",  # Violet-Indigo
+    "#660000",  # Dark Maroon
+    "#CC0F70",  # Magenta-Pink
     
     # Dark Blue Ink Shades
     "#0000A0",  # Dark Blue
     "#1E3A8A",  # Royal Blue
-    "#1D4ED8",  # Strong Blue
     "#0A1172",  # Deep Ink Blue
     "#102542",  # Navy Ink
     "#001F54",  # Dark Sapphire Blue
@@ -75,15 +78,12 @@ PEN_COLORS = [
     "#8B0000",  # Dark Red
     "#B22222",  # Firebrick
     "#DC143C",  # Crimson
-    "#FF0000",  # Bright Red
-    "#800020",  # Burgundy
-    "#7B1E3A",  # Wine Red
-    "#581845",  # Deep Plum (purple-red mix)
+    "#581845",  # Deep Plum
 ]
 
 
 # Padding ratio inside red box
-PADDING_RATIO = 0.25  # 25% padding
+PADDING_RATIO = 0.3  # 25% padding
 
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 def authenticate_youtube():
