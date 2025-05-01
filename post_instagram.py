@@ -54,7 +54,15 @@ IMG_DIR = "images"
 MUSIC_DIR = "music"  # Folder containing royalty-free happy music files (e.g., .mp3)
 EMOJI_FONT_PATH = "fonts/NotoEmoji-Regular.ttf"
 WINDOWS_EMOJI_FONT = r"C:\\Windows\\Fonts\\seguiemj.ttf"
+<<<<<<< HEAD
 HANDWRITING_FONT_PATH = "fonts/Pacifico-Regular.ttf"
+=======
+HANDWRITING_FONT_PATH = "fonts/DancingScript-Bold.ttf"
+
+# Padding ratio inside red box
+PADDING_RATIO = 0.15  # 10% padding
+STRICT_MARGIN_PX = 25 
+>>>>>>> b8b7b50 (Prep commit before pulling remote changes)
 
 # Pen color palette
 PEN_COLORS = [
@@ -82,8 +90,11 @@ PEN_COLORS = [
 ]
 
 
+
 # Padding ratio inside red box
 PADDING_RATIO = 0.3  # 25% padding
+STRICT_MARGIN_PX = 25 
+
 
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 def authenticate_youtube():
@@ -409,7 +420,13 @@ def overlay_text_in_box(image_path, text):
     pil_img = Image.open(image_path)
     draw = ImageDraw.Draw(pil_img)
     x, y, w, h = detect_adjusted_bbox(image_path)
-    
+    x  += STRICT_MARGIN_PX
+    y  += STRICT_MARGIN_PX
+    w  -= 2 * STRICT_MARGIN_PX
+    h  -= 2 * STRICT_MARGIN_PX
+    #     guard against negative sizes
+    if w <= 0 or h <= 0:
+        raise ValueError("STRICT_MARGIN_PX too big for this piece of paper")
     # Draw red border around maximum available area
     # draw.rectangle([x, y, x + w, y + h], outline="red", width=3)
     
@@ -419,7 +436,13 @@ def overlay_text_in_box(image_path, text):
     text_y = y + pad
     text_width = w - 2 * pad
     text_height = h - 2 * pad
-    
+    x  += STRICT_MARGIN_PX
+    y  += STRICT_MARGIN_PX
+    w  -= 2 * STRICT_MARGIN_PX
+    h  -= 2 * STRICT_MARGIN_PX
+    #     guard against negative sizes
+    if w <= 0 or h <= 0:
+        raise ValueError("STRICT_MARGIN_PX too big for this piece of paper")
     pen_color = random.choice(PEN_COLORS)
     min_fs, max_fs = 10, 200
     best_font = None
