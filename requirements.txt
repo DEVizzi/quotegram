@@ -6,6 +6,7 @@ Pillow
 python-dotenv
 langchain
 langchain-google-genai
+google-cloud-texttospeech
 google-auth
 google-auth-httplib2
 google-auth-oauthlib
