@@ -633,7 +633,7 @@ def generate_quote() -> tuple[str, str]:
             "Let your sentence feel like a panel from a manga that changed your life.",
         ]
 
-        if random.random() < 1:  # 40% chance to include superhero essence
+        if random.random() < 0.4:  # 40% chance to include superhero essence
             prompt += " " + random.choice(superhero_refs)
 
     # Add context-aware, stylistic instruction
