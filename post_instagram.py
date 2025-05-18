@@ -107,7 +107,6 @@ STRICT_MARGIN_PX = 25
 #-----------------SppechStuff--------------------------------
 
 
-
 def synthesize_text(text, output_path="output.mp3"):
     """Generate TTS audio with a randomly selected female voice from various nationalities."""
     client = texttospeech.TextToSpeechClient()
@@ -115,7 +114,6 @@ def synthesize_text(text, output_path="output.mp3"):
     # (voice_name, language_code) pairs – all FEMALE
     female_voices = [
         ("en-GB-Wavenet-A", "en-GB"),  # British English
-        #("en-AU-Wavenet-A", "en-AU"),  # Australian English
         ("en-US-Wavenet-C", "en-US"),  # US Mid-tone
         ("en-US-Wavenet-E", "en-US"),  # US Bright
         ("en-US-Wavenet-F", "en-US"),  # US Calm
@@ -125,10 +123,6 @@ def synthesize_text(text, output_path="output.mp3"):
         ("en-US-Wavenet-F", "en-US"),  # Calm and slightly deeper
         ("en-US-Wavenet-H", "en-US"),   # Cheerful, articulate
         ("en-GB-Wavenet-A", "en-GB"),   # British
-        ("en-AU-Wavenet-A", "en-AU"),   # Australian
-        ("fr-FR-Wavenet-E", "fr-FR"),   # French
-        ("de-DE-Wavenet-A", "de-DE"),  # Female, standard
-        ("de-DE-Wavenet-C", "de-DE"),  # Female, variant
     ]
 
     voice_name, language_code = random.choice(female_voices)
@@ -192,7 +186,11 @@ def synthesize_text(text, output_path="output.mp3"):
             ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
         )
 
-        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        
+        audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3,
+        speaking_rate=0.85  # 👈 Reduced speed (normal is 1.0)
+    )
 
         response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
 
@@ -223,7 +221,7 @@ def synthesize_text(text, output_path="output.mp3"):
     print(f"✅ Final output with all voices saved as: {output_path}")
 
     return output_path
-    '''
+'''
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 def authenticate_youtube():
     """
@@ -348,7 +346,7 @@ def get_audio_duration(path: str) -> float:
 
 def mix_audio_tracks(voice_path: str, music_path: str, output_path="mixed_audio.m4a") -> str:
     """Mix voiceover and background music into a single audio track (AAC in M4A), with 1s fade-in and 3s fade-out."""
-    voice_delay_ms = 2000
+    voice_delay_ms = 1300
     voice_duration = get_audio_duration(voice_path)
     total_duration = max(30, voice_duration + voice_delay_ms / 1000)
     fade_out_start = total_duration - 3
@@ -643,8 +641,8 @@ def generate_quote() -> tuple[str, str]:
                     "You are a poetic, emotionally intelligent assistant who writes original, soul-stirring one-line quotes "
                     "with metaphor, emotion, and cinematic depth. You may occasionally reference superheroes or anime characters "
                     "like Spider-Man, Batman, Naruto, or Luffy, but only if it adds meaning—not for fan service. "
-                    "Draw poetic energy from Rumi, Khalil Gibran, and the heroic arcs of modern myth. Never be cliché."
-
+                    "Draw poetic energy from Rumi, Khalil Gibran, and the heroic arcs of modern myth. Never be cliché. "
+                    "All quotes must be a single sentence and no more than 150 characters long, including punctuation."
                 )
             ),
             HumanMessage(
@@ -654,10 +652,12 @@ def generate_quote() -> tuple[str, str]:
                     "but blend them into cinematic metaphors or emotional truths. Quotes must still be poetic, original, and never cliché. "
                     "Avoid common phrases, motivational fluff, or overused proverbs. "
                     "Do not repeat existing quotes. Write something breathtaking, cinematic, and unique. "
-                    "Wrap the quote in exactly **one** pair of double quotes, with no extra punctuation."
+                    "Output exactly one quote wrapped in a single pair of double quotes, with no extra punctuation. "
+                    "⚠️ The quote must be no more than 150 characters in total length."
                 )
             ),
         ]
+
         try:
             resp = llm.invoke(msgs).content.strip()
         except Exception:
@@ -706,24 +706,58 @@ def detect_style_and_choose_music(quote: str) -> str:
     return os.path.join(folder_path, random.choice(files))
 
 
-def generate_hashtags(text: str, num_tags: int = 8) -> str:
+def generate_hashtags_and_tagslist(text: str, num_tags: int = 20) -> tuple[str, list[str]]:
+    """Return a cinematic caption + hashtags and a clean YouTube-style tags list."""
+
     prompt = (
-        f"Generate {num_tags} high-performing, niche-relevant Instagram hashtags "
-        f"for the following content. List them without spaces, each starting with '#': \"{text}\""
+        f"You are a social media strategist. Based on this poetic or motivational quote:\n\n\"{text}\"\n\n"
+        "1. First, generate a short, emotionally engaging one-liner caption with 1–3 emojis. Summarize the mood of the quote (cinematic, heroic, emotional, aesthetic, etc). "
+        "Highlight any referenced superheroes or anime characters like Batman, Naruto, Luffy, Itachi, Levi, All Might, etc.\n"
+        "2. Then, generate 15–20 hashtags, including:\n"
+        "- Quote-specific and niche tags (#cinematicquote, #darkaesthetic, #heroicmindset)\n"
+        "- Platform tags (#reels, #shorts, #YouTubeShorts, #viralquote)\n"
+        "- Superhero or anime tags if mentioned (#Batman, #Naruto, #LeviAckerman, etc.)\n"
+        "- Emotional & inspirational tags (#poetry, #deepquotes, #inspiration)\n"
+        "Respond with everything in one single line: [caption sentence] [hashtags]. No newlines. No explanation. No quotation marks."
     )
+
     msgs = [
-        SystemMessage(content="You are a helpful assistant that suggests relevant hashtags."),
+        SystemMessage(
+            content="You are a top-tier assistant skilled in Instagram and YouTube engagement. Respond only with cinematic captions and clean hashtags."
+        ),
         HumanMessage(content=prompt),
     ]
+
     try:
-        resp = llm.invoke(msgs).content.strip()
-        # split by whitespace or commas
-        raw_tags = [tag.strip(' ,') for tag in resp.replace(',', ' ').split()]
-        hashtags = [tag if tag.startswith('#') else f"#{tag}" for tag in raw_tags]
-        return ' '.join(hashtags[:num_tags])
+        response = llm.invoke(msgs).content.strip()
+
+        # 🔹 Extract tags from response
+        hashtags = [tag.strip(' ,') for tag in response.replace(',', ' ').split() if tag.startswith("#")]
+        hashtags = list(dict.fromkeys(hashtags))  # Remove duplicates
+
+        if len(hashtags) < num_tags:
+            missing = num_tags - len(hashtags)
+            hashtags += ["#poetry", "#reels", "#quotes", "#shorts", "#motivation"][:missing]
+
+        hashtags = hashtags[:num_tags]
+
+        # 🔹 Create YouTube-friendly plain list (no #, all lowercase)
+        tags_list = [tag.lower().replace("#", "") for tag in hashtags]
+
+        # 🔹 Final caption with hashtags (assume first part of response is the caption)
+        if not hashtags:
+            caption_with_tags = f"⚡ Let this quote hit where it matters. {text} #poetry #reels #heroicquotes #viral #shorts"
+        else:
+            caption_with_tags = response
+
+        return caption_with_tags, tags_list
+
     except Exception as e:
-        print(f"⚠️ Hashtag generation failed: {e}")
-        return ""
+        print(f"⚠️ Hashtag/tag generation failed: {e}")
+        fallback_tags = ["poetry", "shorts", "motivation", "quotes", "cinematicquote", "viral", "heroic", "emotional"]
+        fallback_caption = f"Rise like a hero in silence. {text} #poetry #shorts #reels #quotes"
+        return fallback_caption, fallback_tags
+
     
 
 def detect_paper_bbox(img_path):
@@ -987,6 +1021,9 @@ def post_image(image_url: str, caption: str) -> str:
     publish_resp = publish_media_container(resp["id"])
     return f"✅ Image posted successfully (media ID: {publish_resp['id']})"
 
+
+
+
 # --- Main Workflow ---
 if __name__ == "__main__":
     output_folder = os.path.expanduser(os.getenv("OUTPUT_FOLDER", "~/quotegram/output"))
@@ -1020,16 +1057,16 @@ if __name__ == "__main__":
             video_path = combine_image_with_music_ffmpeg(post_img, mixed_audio)
             print(f"✅ Final cinematic story video at {video_path}")
 
-            # Build caption with hashtags
-            hashtags = generate_hashtags(quote, num_tags=8)
-            caption = f"{quote}\n\n{hashtags}" if hashtags else quote
+            # Build caption with hashtags and taglist
+            caption, tags_list = generate_hashtags_and_tagslist(quote,20)
+            
             print(f"Caption--->: {caption}")
+            print(f"Tags--->: {tags_list}")
             # Post to Facebook Page
             #fb_result = post_to_facebook(video_path, caption)
             #print(fb_result)
             
             # 1) Upload to YouTube first to avoid double posting on retry
-            tags_list = hashtags.replace("#", "").split() if hashtags else []
             yt_id = upload_video(video_path, title=quote, description=caption, tags=tags_list)
             print(f"✅ YouTube Shorts ID: {yt_id}")
 
