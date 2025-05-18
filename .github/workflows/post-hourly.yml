@@ -2,10 +2,12 @@ name: Instagram Post Every 6 Hours
 
 on:
   schedule:
-    # Run at minute 0 every 6th hour (UTC)
-    - cron: '0 */6 * * *'
-  push:
-    branches: [ main ]
+    # Five optimal posting times per day (UTC)
+    - cron: "2 2 * * *"     # 07:30 AM IST
+    - cron: "6 6 * * *"     # 11:30 AM IST
+    - cron: "9 9 * * *"     # 03:00 PM IST
+    - cron: "12 12 * * *"   # 06:00 PM IST
+    - cron: "15 15 * * *"   # 09:00 PM IST
   workflow_dispatch:
 
 jobs:
