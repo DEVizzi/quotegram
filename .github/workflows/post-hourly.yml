@@ -5,7 +5,6 @@ on:
     # Five optimal posting times per day (UTC)
     - cron: "2 2 * * *"     # 07:30 AM IST
     - cron: "6 6 * * *"     # 11:30 AM IST
-    - cron: "9 9 * * *"     # 03:00 PM IST
     - cron: "12 12 * * *"   # 06:00 PM IST
     - cron: "15 15 * * *"   # 09:00 PM IST
   workflow_dispatch:
