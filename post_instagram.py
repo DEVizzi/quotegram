@@ -629,7 +629,7 @@ def generate_quote() -> tuple[str, str]:
                     "with metaphor, emotion, and cinematic depth. You may occasionally reference superheroes or anime characters "
                     "like Spider-Man, Batman, Naruto, or Luffy, but only if it adds meaning—not for fan service. "
                     "Draw poetic energy from Rumi, Khalil Gibran, and the heroic arcs of modern myth. Never be cliché. "
-                    "All quotes must be a single sentence and no more than 150 characters long, including punctuation."
+                    "All quotes must be a single sentence and no more than 100 characters long, including punctuation."
                 )
             ),
             HumanMessage(
@@ -640,7 +640,7 @@ def generate_quote() -> tuple[str, str]:
                     "Avoid common phrases, motivational fluff, or overused proverbs. "
                     "Do not repeat existing quotes. Write something breathtaking, cinematic, and unique. "
                     "Output exactly one quote wrapped in a single pair of double quotes, with no extra punctuation. "
-                    "⚠️ The quote must be no more than 150 characters in total length."
+                    "⚠️ The quote must be no more than 100 characters in total length."
                 )
             ),
         ]
