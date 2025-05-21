@@ -158,21 +158,10 @@ def synthesize_text(text, output_path="output.mp3"):
     client = texttospeech.TextToSpeechClient()
 
     female_voices = [
-        ("en-GB-Wavenet-A", "en-GB"),  # British English
-        ("en-AU-Wavenet-A", "en-AU"),  # Australian English
         ("en-US-Wavenet-C", "en-US"),  # US Mid-tone
         ("en-US-Wavenet-E", "en-US"),  # US Bright
         ("en-US-Wavenet-F", "en-US"),  # US Calm
-        ("en-US-Wavenet-H", "en-US"),  # US Cheerful
-        ("en-US-Wavenet-C", "en-US"),  # Mid-tone female
-        ("en-US-Wavenet-E", "en-US"),  # Bright, expressive
-        ("en-US-Wavenet-F", "en-US"),  # Calm and slightly deeper
         ("en-US-Wavenet-H", "en-US"),   # Cheerful, articulate
-        ("en-GB-Wavenet-A", "en-GB"),   # British
-        ("en-AU-Wavenet-A", "en-AU"),   # Australian
-        ("fr-FR-Wavenet-E", "fr-FR"),   # French
-        ("de-DE-Wavenet-A", "de-DE"),  # Female, standard
-        ("de-DE-Wavenet-C", "de-DE"),  # Female, variant
     ]
 
     temp_audio_files = []
@@ -188,9 +177,11 @@ def synthesize_text(text, output_path="output.mp3"):
 
         
         audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=0.85  # 👈 Reduced speed (normal is 1.0)
-    )
+            audio_encoding=texttospeech.AudioEncoding.MP3,
+            speaking_rate=0.80,      # Slowed for dramatic pacing
+            pitch=-2.0,              # Slightly deeper pitch
+            volume_gain_db=2.0       # Optional boost
+        )
 
         response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
 
