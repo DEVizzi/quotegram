@@ -113,16 +113,10 @@ def synthesize_text(text, output_path="output.mp3"):
 
     # (voice_name, language_code) pairs – all FEMALE
     female_voices = [
-        ("en-GB-Wavenet-A", "en-GB"),  # British English
         ("en-US-Wavenet-C", "en-US"),  # US Mid-tone
         ("en-US-Wavenet-E", "en-US"),  # US Bright
         ("en-US-Wavenet-F", "en-US"),  # US Calm
-        ("en-US-Wavenet-H", "en-US"),  # US Cheerful
-        ("en-US-Wavenet-C", "en-US"),  # Mid-tone female
-        ("en-US-Wavenet-E", "en-US"),  # Bright, expressive
-        ("en-US-Wavenet-F", "en-US"),  # Calm and slightly deeper
         ("en-US-Wavenet-H", "en-US"),   # Cheerful, articulate
-        ("en-GB-Wavenet-A", "en-GB"),   # British
     ]
 
     voice_name, language_code = random.choice(female_voices)
@@ -138,7 +132,9 @@ def synthesize_text(text, output_path="output.mp3"):
 
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=0.85  # 👈 Reduced speed (normal is 1.0)
+        speaking_rate=0.80,      # Slowed for dramatic pacing
+        pitch=-2.0,              # Slightly deeper pitch
+        volume_gain_db=2.0       # Optional boost
     )
 
     response = client.synthesize_speech(
