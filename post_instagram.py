@@ -113,10 +113,16 @@ def synthesize_text(text, output_path="output.mp3"):
 
     # (voice_name, language_code) pairs – all FEMALE
     female_voices = [
+        ("en-GB-Wavenet-A", "en-GB"),  # British English
         ("en-US-Wavenet-C", "en-US"),  # US Mid-tone
         ("en-US-Wavenet-E", "en-US"),  # US Bright
         ("en-US-Wavenet-F", "en-US"),  # US Calm
+        ("en-US-Wavenet-H", "en-US"),  # US Cheerful
+        ("en-US-Wavenet-C", "en-US"),  # Mid-tone female
+        ("en-US-Wavenet-E", "en-US"),  # Bright, expressive
+        ("en-US-Wavenet-F", "en-US"),  # Calm and slightly deeper
         ("en-US-Wavenet-H", "en-US"),   # Cheerful, articulate
+        ("en-GB-Wavenet-A", "en-GB"),   # British
     ]
 
     voice_name, language_code = random.choice(female_voices)
@@ -132,9 +138,7 @@ def synthesize_text(text, output_path="output.mp3"):
 
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=0.80,      # Slowed for dramatic pacing
-        pitch=-2.0,              # Slightly deeper pitch
-        volume_gain_db=2.0       # Optional boost
+        speaking_rate=0.85  # 👈 Reduced speed (normal is 1.0)
     )
 
     response = client.synthesize_speech(
@@ -154,10 +158,21 @@ def synthesize_text(text, output_path="output.mp3"):
     client = texttospeech.TextToSpeechClient()
 
     female_voices = [
+        ("en-GB-Wavenet-A", "en-GB"),  # British English
+        ("en-AU-Wavenet-A", "en-AU"),  # Australian English
         ("en-US-Wavenet-C", "en-US"),  # US Mid-tone
         ("en-US-Wavenet-E", "en-US"),  # US Bright
         ("en-US-Wavenet-F", "en-US"),  # US Calm
+        ("en-US-Wavenet-H", "en-US"),  # US Cheerful
+        ("en-US-Wavenet-C", "en-US"),  # Mid-tone female
+        ("en-US-Wavenet-E", "en-US"),  # Bright, expressive
+        ("en-US-Wavenet-F", "en-US"),  # Calm and slightly deeper
         ("en-US-Wavenet-H", "en-US"),   # Cheerful, articulate
+        ("en-GB-Wavenet-A", "en-GB"),   # British
+        ("en-AU-Wavenet-A", "en-AU"),   # Australian
+        ("fr-FR-Wavenet-E", "fr-FR"),   # French
+        ("de-DE-Wavenet-A", "de-DE"),  # Female, standard
+        ("de-DE-Wavenet-C", "de-DE"),  # Female, variant
     ]
 
     temp_audio_files = []
@@ -173,11 +188,9 @@ def synthesize_text(text, output_path="output.mp3"):
 
         
         audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3,
-            speaking_rate=0.80,      # Slowed for dramatic pacing
-            pitch=-2.0,              # Slightly deeper pitch
-            volume_gain_db=2.0       # Optional boost
-        )
+        audio_encoding=texttospeech.AudioEncoding.MP3,
+        speaking_rate=0.85  # 👈 Reduced speed (normal is 1.0)
+    )
 
         response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
 
@@ -618,7 +631,7 @@ def generate_quote() -> tuple[str, str]:
             "Let your sentence feel like a panel from a manga that changed your life.",
         ]
 
-        if random.random() < 0.4:  # 40% chance to include superhero essence
+        if random.random() < 0.2:  # 20% chance to include superhero essence
             prompt += " " + random.choice(superhero_refs)
 
     # Add context-aware, stylistic instruction
@@ -629,18 +642,17 @@ def generate_quote() -> tuple[str, str]:
                     "with metaphor, emotion, and cinematic depth. You may occasionally reference superheroes or anime characters "
                     "like Spider-Man, Batman, Naruto, or Luffy, but only if it adds meaning—not for fan service. "
                     "Draw poetic energy from Rumi, Khalil Gibran, and the heroic arcs of modern myth. Never be cliché. "
-                    "All quotes must be a single sentence and no more than 100 characters long, including punctuation."
+                    "All quotes must be a single sentence and no more than 150 characters long, including punctuation."
                 )
             ),
             HumanMessage(
                 content=(
                     f"{prompt} — Think deeply and metaphorically. Use vivid imagery, emotional subtext, and superhero symbolism. "
-                    "You're allowed to reference iconic characters like Spider-Man, Naruto, Batman, Levi, Luffy, All Might, Itachi, or Tony Stark—"
-                    "but blend them into cinematic metaphors or emotional truths. Quotes must still be poetic, original, and never cliché. "
+                     "but blend them into cinematic metaphors or emotional truths. Quotes must still be poetic, original, and never cliché. "
                     "Avoid common phrases, motivational fluff, or overused proverbs. "
                     "Do not repeat existing quotes. Write something breathtaking, cinematic, and unique. "
                     "Output exactly one quote wrapped in a single pair of double quotes, with no extra punctuation. "
-                    "⚠️ The quote must be no more than 100 characters in total length."
+                    "⚠️ The quote must be no more than 150 characters in total length."
                 )
             ),
         ]
