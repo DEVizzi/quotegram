@@ -152,76 +152,7 @@ def synthesize_text(text, output_path="output.mp3"):
         print(f"✅ Audio content written to {output_path}")
 
     return output_path
-'''
-def synthesize_text(text, output_path="output.mp3"):
-    """Generate TTS audio with each female voice speaking the same full text, then concatenate all outputs."""
-    client = texttospeech.TextToSpeechClient()
 
-    female_voices = [
-        ("en-GB-Wavenet-A", "en-GB"),  # British English
-        ("en-AU-Wavenet-A", "en-AU"),  # Australian English
-        ("en-US-Wavenet-C", "en-US"),  # US Mid-tone
-        ("en-US-Wavenet-E", "en-US"),  # US Bright
-        ("en-US-Wavenet-F", "en-US"),  # US Calm
-        ("en-US-Wavenet-H", "en-US"),  # US Cheerful
-        ("en-US-Wavenet-C", "en-US"),  # Mid-tone female
-        ("en-US-Wavenet-E", "en-US"),  # Bright, expressive
-        ("en-US-Wavenet-F", "en-US"),  # Calm and slightly deeper
-        ("en-US-Wavenet-H", "en-US"),   # Cheerful, articulate
-        ("en-GB-Wavenet-A", "en-GB"),   # British
-        ("en-AU-Wavenet-A", "en-AU"),   # Australian
-        ("fr-FR-Wavenet-E", "fr-FR"),   # French
-        ("de-DE-Wavenet-A", "de-DE"),  # Female, standard
-        ("de-DE-Wavenet-C", "de-DE"),  # Female, variant
-    ]
-
-    temp_audio_files = []
-
-    for i, (voice_name, lang_code) in enumerate(female_voices):
-        input_text = texttospeech.SynthesisInput(text=text)
-
-        voice = texttospeech.VoiceSelectionParams(
-            language_code=lang_code,
-            name=voice_name,
-            ssml_gender=texttospeech.SsmlVoiceGender.FEMALE
-        )
-
-        
-        audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=0.85  # 👈 Reduced speed (normal is 1.0)
-    )
-
-        response = client.synthesize_speech(input=input_text, voice=voice, audio_config=audio_config)
-
-        temp_file = os.path.join(tempfile.gettempdir(), f"voice_line_{i}.mp3")
-        with open(temp_file, "wb") as out:
-            out.write(response.audio_content)
-        temp_audio_files.append(temp_file)
-
-        print(f"🎤 {voice_name} ({lang_code}) -> full line saved: {temp_file}")
-
-    # Create concat list file for ffmpeg
-    concat_list_path = os.path.join(tempfile.gettempdir(), "concat_list.txt")
-    with open(concat_list_path, "w", encoding="utf-8") as f:
-        for path in temp_audio_files:
-            f.write(f"file '{path}'\n")
-
-    # Final concatenation using ffmpeg
-    command = [
-        "ffmpeg", "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", concat_list_path,
-        "-c", "copy",
-        output_path
-    ]
-
-    subprocess.run(command, check=True)
-    print(f"✅ Final output with all voices saved as: {output_path}")
-
-    return output_path
-'''
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 def authenticate_youtube():
     """
@@ -330,9 +261,7 @@ def get_audio_duration(path: str) -> float:
     )
     return float(result.stdout.strip())
 
-import subprocess
-import os
-import tempfile
+
 
 def get_audio_duration(path: str) -> float:
     """Get the duration of an audio file in seconds."""
@@ -391,33 +320,6 @@ def combine_image_with_music_ffmpeg(image_path: str, audio_path: str) -> str:
     subprocess.run(command, check=True)
     print(f"🎬 Final video created at {out_video}")
     return out_video
-
-
-
-def mix_audio_tracks(voice_path: str, music_path: str, output_path="mixed_audio.m4a") -> str:
-    """Mix voiceover and background music into a single audio track (AAC in M4A)."""
-    voice_delay_ms = 2000
-    voice_duration = get_audio_duration(voice_path)
-    total_duration = max(30, voice_duration + voice_delay_ms / 1000)
-
-    command = [
-        "ffmpeg",
-        "-y",
-        "-i", voice_path,
-        "-i", music_path,
-        "-filter_complex",
-        f"[0:a]adelay={voice_delay_ms}|{voice_delay_ms}[voice];"
-        f"[1:a]volume=0.2[music];"
-        f"[music][voice]amix=inputs=2:duration=longest:dropout_transition=2[aout]",
-        "-map", "[aout]",
-        "-t", str(total_duration),
-        "-c:a", "aac",
-        output_path
-    ]
-    subprocess.run(command, check=True)
-    print(f"🎧 Mixed audio saved at {output_path}")
-    return output_path
-
 
 def generate_quote() -> tuple[str, str]:
     """Generate a unique quote along with its style."""
@@ -631,8 +533,15 @@ def generate_quote() -> tuple[str, str]:
             "Let your sentence feel like a panel from a manga that changed your life.",
         ]
 
-        if random.random() < 0.2:  # 20% chance to include superhero essence
+        if random.random() < 0.1:  # 20% chance to include superhero essence
             prompt += " " + random.choice(superhero_refs)
+
+        quote_topics = [
+            "grief", "forgiveness", "loneliness", "freedom", "ambition", "love", "betrayal", "sacrifice", "trust",
+            "failure", "loss", "truth", "change", "rebirth", "hope", "courage", "letting go", "self-worth", "dreams", "silence"
+        ]
+        topic = random.choice(quote_topics)
+        prompt += f" — It should subtly reflect the theme of {topic}."
 
     # Add context-aware, stylistic instruction
         msgs = [
@@ -1066,8 +975,18 @@ if __name__ == "__main__":
             #print(fb_result)
             
             # 1) Upload to YouTube first to avoid double posting on retry
-            yt_id = upload_video(video_path, title=quote, description=caption, tags=tags_list)
-            print(f"✅ YouTube Shorts ID: {yt_id}")
+            short_tease = quote.split(" ")[:5]
+            title = f"🎙️ Cinematic Quote: {' '.join(short_tease)}... | {style} Short"
+            description = (
+                f"🌌 {style} Cinematic Quote Reel\n\n"
+                f"{quote}\n\n"
+                "✨ This video features an original one-line quote with voiceover and background music, "
+                "designed for emotional impact and aesthetic resonance.\n\n"
+                "🎧 AI-generated voice, handwritten style overlay, and royalty-free background music.\n\n"
+                "🔔 Subscribe for more poetic, emotional, or inspiring quotes like this.\n\n"
+                f"{caption}"
+            )
+            yt_id = upload_video(video_path, title=title, description=description, tags=tags_list)
 
             # 2) Then post as Instagram Reel
             result = post_reel(video_path, caption)
