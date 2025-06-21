@@ -33,10 +33,13 @@ TOKEN_URI = "https://oauth2.googleapis.com/token"
 #-------------------------------------------YOUTUBE--------------------------------------------------------------
 
 # Instagram Graph API configuration
-ACCESS_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN")  # Page access token
-PAGE_ID = os.getenv("FB_PAGE_ID")  # Facebook Page ID
 API_VERSION = "v17.0"
 BASE_URL = f"https://graph.facebook.com/{API_VERSION}"
+
+IG_ACCESS_TOKEN = os.getenv("IG_ACCESS_TOKEN")
+IG_USER_ID = os.getenv("IG_BUSINESS_ACCOUNT_ID")
+INSTAGRAM_BASE_URL = "https://graph.facebook.com/v17.0"
+
 
 # Environment variables
 GENAI_KEY = os.getenv("GOOGLE_API_KEY")
@@ -845,26 +848,6 @@ def post_to_facebook(video_path: str, caption: str) -> str:
             raise RuntimeError(f"Failed to upload video to Facebook: {response.text}")
         return f"✅ Video posted to Facebook Page (video ID: {response.json()['id']})"
 '''
-
-def fetch_ig_business_account_id(page_id: str) -> str:
-    endpoint = f"{BASE_URL}/{page_id}"
-    params = {
-        "fields": "instagram_business_account",
-        "access_token": ACCESS_TOKEN
-    }
-    resp = requests.get(endpoint, params=params).json()
-    ig_info = resp.get("instagram_business_account")
-    if not ig_info or not ig_info.get("id"):
-        raise RuntimeError(f"Unable to fetch Instagram Business Account ID: {resp}")
-    return ig_info["id"]
-
-# Determine IG_USER_ID (Instagram Business Account ID)
-IG_USER_ID = os.getenv("IG_BUSINESS_ACCOUNT_ID")
-if not IG_USER_ID:
-    if not PAGE_ID:
-        raise RuntimeError("Must provide either IG_BUSINESS_ACCOUNT_ID or FB_PAGE_ID in environment variables.")
-    IG_USER_ID = fetch_ig_business_account_id(PAGE_ID)
-
 # --- Instagram Graph API Reels Upload Flow ---
 def init_reel_upload(caption: str, cover_url: str = None) -> (str, str):
     endpoint = f"{BASE_URL}/{IG_USER_ID}/media"
@@ -872,7 +855,7 @@ def init_reel_upload(caption: str, cover_url: str = None) -> (str, str):
         "media_type": "REELS",
         "upload_type": "resumable",
         "caption": caption,
-        "access_token": ACCESS_TOKEN
+        "access_token": IG_ACCESS_TOKEN  # ✅ use this instead
     }
     if cover_url:
         params["cover_url"] = cover_url
@@ -885,7 +868,7 @@ def init_reel_upload(caption: str, cover_url: str = None) -> (str, str):
 def upload_reel_video(upload_url: str, video_path: str) -> None:
     file_size = os.path.getsize(video_path)
     headers = {
-        "Authorization": f"OAuth {ACCESS_TOKEN}",
+        "Authorization": f"OAuth {IG_ACCESS_TOKEN}",
         "offset": "0",
         "file_size": str(file_size)
     }
@@ -900,7 +883,7 @@ def publish_media_container(container_id: str) -> dict:
     endpoint = f"{BASE_URL}/{IG_USER_ID}/media_publish"
     params = {
         "creation_id": container_id,
-        "access_token": ACCESS_TOKEN
+        "access_token": IG_ACCESS_TOKEN
     }
     resp = requests.post(endpoint, data=params).json()
     if "id" not in resp:
@@ -921,7 +904,7 @@ def post_image(image_url: str, caption: str) -> str:
     params = {
         "image_url": image_url,
         "caption": caption,
-        "access_token": ACCESS_TOKEN
+        "access_token": IG_ACCESS_TOKEN
     }
     resp = requests.post(endpoint, params=params).json()
     if "id" not in resp:
