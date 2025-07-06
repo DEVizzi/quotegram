@@ -17,8 +17,9 @@ from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google.cloud import texttospeech
-import tempfile
+import time
 import argparse
+
 # LangChain imports
 from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -253,18 +254,6 @@ def choose_music():
     if not files:
         raise RuntimeError("No music files found in MUSIC_DIR.")
     return os.path.join(MUSIC_DIR, random.choice(files))     
-
-def get_audio_duration(path: str) -> float:
-    """Get the duration of an audio file in seconds."""
-    result = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries",
-         "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT
-    )
-    return float(result.stdout.strip())
-
-
 
 def get_audio_duration(path: str) -> float:
     """Get the duration of an audio file in seconds."""
@@ -847,7 +836,7 @@ def post_to_facebook(video_path: str, caption: str) -> str:
         if not response.ok or 'id' not in response.json():
             raise RuntimeError(f"Failed to upload video to Facebook: {response.text}")
         return f"✅ Video posted to Facebook Page (video ID: {response.json()['id']})"
-'''
+
 # --- Instagram Graph API Reels Upload Flow ---
 def init_reel_upload(caption: str, cover_url: str = None) -> (str, str):
     endpoint = f"{BASE_URL}/{IG_USER_ID}/media"
@@ -877,7 +866,7 @@ def upload_reel_video(upload_url: str, video_path: str) -> None:
     data = resp.json() if resp.headers.get('Content-Type','').startswith('application/json') else {}
     if not resp.ok or (data.get("success") is False):
         raise RuntimeError(f"Error uploading reel video: {data or resp.text}")
-
+'''
 
 def publish_media_container(container_id: str) -> dict:
     endpoint = f"{BASE_URL}/{IG_USER_ID}/media_publish"
@@ -890,42 +879,114 @@ def publish_media_container(container_id: str) -> dict:
         raise RuntimeError(f"Error publishing media: {resp}")
     return resp
 
+def upload_to_tmpfiles(file_path: str) -> str:
+    """
+    Uploads a file to tmpfiles.org for temporary public hosting.
+    """
+    try:
+        with open(file_path, 'rb') as f:
+            files = {'file': f}
+            response = requests.post("https://tmpfiles.org/api/v1/upload", files=files)
+            data = response.json()
+            if "data" in data and "url" in data["data"]:
+                url = data["data"]["url"]
+                print(f"🛰️ Uploaded video to temporary host: {url}")
+                return url
+            else:
+                print("❌ Failed to upload to tmpfiles:", data)
+                return None
+    except Exception as e:
+        print(f"❌ upload_to_tmpfiles error: {e}")
+        return None
+'''
+def post_reel(video_path, caption) -> bool:
+    print("🚀 Uploading video as Instagram Reel via file upload...")
 
-def post_reel(video_path: str, caption: str) -> str:
-    # Step 1: Upload the video to a publicly accessible URL
-    # For testing, you can upload to an S3 bucket or use a mock URL if IG allows it
+    try:
+        with open(video_path, 'rb') as video_file:
+            files = {'file': video_file}
+            upload_url = f"https://graph.facebook.com/v18.0/{IG_USER_ID}/media"
+            params = {
+                'media_type': 'VIDEO',
+                'caption': caption,
+                'access_token': IG_ACCESS_TOKEN
+            }
+            response = requests.post(upload_url, files=files, data=params).json()
 
-    upload_endpoint = f"{INSTAGRAM_BASE_URL}/{IG_USER_ID}/media"
-    video_file = open(video_path, 'rb')
-    files = {
-        'video': video_file
-    }
-    data = {
-        "media_type": "REEL",
+        if "id" not in response:
+            print(f"❌ Failed to create IG media container: {response}")
+            return False
+
+        creation_id = response["id"]
+        time.sleep(5)
+
+        publish_url = f"https://graph.facebook.com/v18.0/{IG_USER_ID}/media_publish"
+        publish_payload = {
+            "creation_id": creation_id,
+            "access_token": IG_ACCESS_TOKEN
+        }
+        publish_response = requests.post(publish_url, data=publish_payload).json()
+
+        if "id" in publish_response:
+            print(f"✅ Reel posted successfully: {publish_response['id']}")
+            return True
+        else:
+            print(f"❌ Failed to publish IG reel: {publish_response}")
+            return False
+
+    except Exception as e:
+        print(f"❌ Exception during IG reel upload: {e}")
+        return False
+
+'''
+#*****************************INSTAGRAM***Media**BEGIN***********************************
+def init_reel_upload(caption: str, cover_url: str = None) -> (str, str):
+    print("📤 Uploading reel with caption from init_reel_upload:", caption)
+    endpoint = f"{BASE_URL}/{IG_USER_ID}/media"
+    params = {
+        "media_type": "REELS",
+        "upload_type": "resumable",
         "caption": caption,
         "access_token": IG_ACCESS_TOKEN
     }
+    if cover_url:
+        params["cover_url"] = cover_url
+    resp = requests.post(endpoint, data=params).json()
+    if "id" not in resp or "uri" not in resp:
+        raise RuntimeError(f"Error initializing reel upload: {resp}")
+    return resp["id"], resp["uri"]
 
-    response = requests.post(upload_endpoint, data=data, files=files)
-    video_file.close()
+def upload_reel_video(upload_url: str, video_path: str) -> None:
+    file_size = os.path.getsize(video_path)
+    headers = {
+        "Authorization": f"OAuth {IG_ACCESS_TOKEN}",
+        "offset": "0",
+        "file_size": str(file_size)
+    }
+    with open(video_path, "rb") as f:
+        resp = requests.post(upload_url, headers=headers, data=f)
+    data = resp.json() if resp.headers.get('Content-Type', '').startswith('application/json') else {}
+    if not resp.ok or (data.get("success") is False):
+        raise RuntimeError(f"Error uploading reel video: {data or resp.text}")
 
-    if not response.ok or "id" not in response.json():
-        raise RuntimeError(f"Instagram upload failed: {response.text}")
-    
-    creation_id = response.json()["id"]
-
-    publish_endpoint = f"{INSTAGRAM_BASE_URL}/{IG_USER_ID}/media_publish"
-    publish_data = {
-        "creation_id": creation_id,
+def publish_media_container(container_id: str) -> dict:
+    endpoint = f"{BASE_URL}/{IG_USER_ID}/media_publish"
+    params = {
+        "creation_id": container_id,
         "access_token": IG_ACCESS_TOKEN
     }
+    resp = requests.post(endpoint, data=params).json()
+    if "id" not in resp:
+        raise RuntimeError(f"Error publishing media: {resp}")
+    return resp
 
-    publish_response = requests.post(publish_endpoint, data=publish_data)
-    if not publish_response.ok or "id" not in publish_response.json():
-        raise RuntimeError(f"Instagram publish failed: {publish_response.text}")
-    
-    return f"✅ Reel posted successfully (media ID: {publish_response.json()['id']})"
-
+def post_reel(video_path: str, caption: str, cover_url: str = None) -> str:
+    container_id, upload_url = init_reel_upload(caption, cover_url)
+    upload_reel_video(upload_url, video_path)
+    res = publish_media_container(container_id)
+    print("📸 Instagram post result:", res)  # Add this line
+    return f"✅ Reel posted successfully (media ID: {res['id']})"
+#*****************************INSTAGRAM***END*************************************
 
 # Image posting unchanged; ensure create_image_container exists upstream
 
@@ -1004,9 +1065,9 @@ if __name__ == "__main__":
             if not yt_id:
                 yt_id = upload_video(video_path, title=title, description=description, tags=tags_list)
 
-            # 2) Then post as Instagram Reel
-            result = post_reel(video_path, caption)
-            print(result)
+            print(f"🔔Goinbg for Reel Uploaded.")
+            post_reel(video_path, caption)
+            print(f"✅ Reel Uploaded.")
             
             success = True
 
