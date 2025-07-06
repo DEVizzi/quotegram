@@ -891,11 +891,41 @@ def publish_media_container(container_id: str) -> dict:
     return resp
 
 
-def post_reel(video_path: str, caption: str, cover_url: str = None) -> str:
-    container_id, upload_url = init_reel_upload(caption, cover_url)
-    upload_reel_video(upload_url, video_path)
-    res = publish_media_container(container_id)
-    return f"✅ Reel posted successfully (media ID: {res['id']})"
+def post_reel(video_path: str, caption: str) -> str:
+    # Step 1: Upload the video to a publicly accessible URL
+    # For testing, you can upload to an S3 bucket or use a mock URL if IG allows it
+
+    upload_endpoint = f"{INSTAGRAM_BASE_URL}/{IG_USER_ID}/media"
+    video_file = open(video_path, 'rb')
+    files = {
+        'video': video_file
+    }
+    data = {
+        "media_type": "REEL",
+        "caption": caption,
+        "access_token": IG_ACCESS_TOKEN
+    }
+
+    response = requests.post(upload_endpoint, data=data, files=files)
+    video_file.close()
+
+    if not response.ok or "id" not in response.json():
+        raise RuntimeError(f"Instagram upload failed: {response.text}")
+    
+    creation_id = response.json()["id"]
+
+    publish_endpoint = f"{INSTAGRAM_BASE_URL}/{IG_USER_ID}/media_publish"
+    publish_data = {
+        "creation_id": creation_id,
+        "access_token": IG_ACCESS_TOKEN
+    }
+
+    publish_response = requests.post(publish_endpoint, data=publish_data)
+    if not publish_response.ok or "id" not in publish_response.json():
+        raise RuntimeError(f"Instagram publish failed: {publish_response.text}")
+    
+    return f"✅ Reel posted successfully (media ID: {publish_response.json()['id']})"
+
 
 # Image posting unchanged; ensure create_image_container exists upstream
 
@@ -923,6 +953,8 @@ if __name__ == "__main__":
     max_attempts = 3
     attempt = 0
     success = False
+
+    yt_id = None  # Declare outside loop
 
     while not success and attempt < max_attempts:
         attempt += 1
@@ -969,7 +1001,8 @@ if __name__ == "__main__":
                 "🔔 Subscribe for more poetic, emotional, or inspiring quotes like this.\n\n"
                 f"{caption}"
             )
-            yt_id = upload_video(video_path, title=title, description=description, tags=tags_list)
+            if not yt_id:
+                yt_id = upload_video(video_path, title=title, description=description, tags=tags_list)
 
             # 2) Then post as Instagram Reel
             result = post_reel(video_path, caption)
