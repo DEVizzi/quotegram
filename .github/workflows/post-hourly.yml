@@ -4,26 +4,26 @@ name: Instagram Post Every 6 Hours
 on:
   schedule:
     # Monday to Sunday — 9:00 AM IST and 6:30 PM IST
-    - cron: "30 3 * * 1"  # 9:00 AM IST Monday
-    - cron: "0 13 * * 1"  # 6:30 PM IST Monday
+   # - cron: "30 3 * * 1"  # 9:00 AM IST Monday
+   # - cron: "0 13 * * 1"  # 6:30 PM IST Monday
 
-    - cron: "30 3 * * 2"  # 9:00 AM IST Tuesday
-    - cron: "0 13 * * 2"  # 6:30 PM IST Tuesday
+   # - cron: "30 3 * * 2"  # 9:00 AM IST Tuesday
+   # - cron: "0 13 * * 2"  # 6:30 PM IST Tuesday
 
-    - cron: "30 3 * * 3"  # 9:00 AM IST Wednesday
-    - cron: "0 13 * * 3"  # 6:30 PM IST Wednesday
+  #  - cron: "30 3 * * 3"  # 9:00 AM IST Wednesday
+  #  - cron: "0 13 * * 3"  # 6:30 PM IST Wednesday
 
-    - cron: "30 3 * * 4"  # 9:00 AM IST Thursday
-    - cron: "0 13 * * 4"  # 6:30 PM IST Thursday
+  #  - cron: "30 3 * * 4"  # 9:00 AM IST Thursday
+   # - cron: "0 13 * * 4"  # 6:30 PM IST Thursday
 
-    - cron: "30 3 * * 5"  # 9:00 AM IST Friday
-    - cron: "0 13 * * 5"  # 6:30 PM IST Friday
+   # - cron: "30 3 * * 5"  # 9:00 AM IST Friday
+  #  - cron: "0 13 * * 5"  # 6:30 PM IST Friday
 
-    - cron: "30 3 * * 6"  # 9:00 AM IST Saturday
-    - cron: "0 13 * * 6"  # 6:30 PM IST Saturday
+   # - cron: "30 3 * * 6"  # 9:00 AM IST Saturday
+  #  - cron: "0 13 * * 6"  # 6:30 PM IST Saturday
 
-    - cron: "30 3 * * 0"  # 9:00 AM IST Sunday
-    - cron: "0 13 * * 0"  # 6:30 PM IST Sunday
+  #  - cron: "30 3 * * 0"  # 9:00 AM IST Sunday
+  #  - cron: "0 13 * * 0"  # 6:30 PM IST Sunday
 
   workflow_dispatch:
 
